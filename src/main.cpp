@@ -6,8 +6,6 @@
 #define DMASIZE 12800
 uint16_t src[DMASIZE];
 
-volatile uint16_t dest[DMASIZE];
-
 volatile uint16_t loopIndex = 0;
 
 /** Wait for and consume a keypress over USB **/
@@ -72,7 +70,7 @@ void loop()
   Serial.println("Testing src -> dest, single transfer");
   Serial.println("--------------------------------------------------");
   ActiveLowChipSelect cs(0, SPISettings(4000000, MSBFIRST, SPI_MODE0));
-  trx = DmaSpi::Transfer(src, DMASIZE, dest, 0, &cs);
+  trx = DmaSpi::Transfer(src, DMASIZE, nullptr, 0, &cs);
   DMASPI0.registerTransfer(trx);
   while(trx.busy())
   {

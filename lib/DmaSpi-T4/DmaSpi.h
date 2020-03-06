@@ -12,13 +12,15 @@
 #include "DMAChannel.h"
 #include "ChipSelect.h"
 
-#define DEBUG_DMASPI 1
+// #define DEBUG_DMASPI 1
 
 #if defined(DEBUG_DMASPI)
   #define DMASPI_PRINT(x) do {Serial.printf x ; Serial.flush();} while (0);
 #else
   #define DMASPI_PRINT(x) do {} while (0);
 #endif
+
+void dumpDMA_TCD(DMABaseClass *dmabc);
 
 namespace DmaSpi
 {
@@ -464,6 +466,9 @@ class AbstractDmaSpi
         DMASPI_PRINT(("  dummy sink\n"));
         rxChannel_()->destination(m_devNull);
         rxChannel_()->transferCount(m_pCurrentTransfer->m_transferCount);
+        // set CITER und BITER as they seem to be set for 8 bit transfers
+        rxChannel_()->TCD->CITER = m_pCurrentTransfer->m_transferCount / 2;
+        rxChannel_()->TCD->BITER = m_pCurrentTransfer->m_transferCount / 2;
       }
 
       // configure Tx DMA
@@ -613,50 +618,6 @@ public:
 
 private:
 };
-
-/*
-class DmaSpi2 : public AbstractDmaSpi<DmaSpi2, SPIClass, SPI2>
-{
-public:
-  static void begin_setup_txChannel_impl()
-  {
-    txChannel_()->disable();
-    txChannel_()->destination((volatile uint8_t&)SPI2_PUSHR);
-    txChannel_()->disableOnCompletion();
-    txChannel_()->triggerAtHardwareEvent(DMAMUX_SOURCE_SPI2_TX);
-  }
-
-  static void begin_setup_rxChannel_impl()
-  {
-    rxChannel_()->disable();
-    rxChannel_()->source((volatile uint8_t&)SPI2_POPR);
-    rxChannel_()->disableOnCompletion();
-    rxChannel_()->triggerAtHardwareEvent(DMAMUX_SOURCE_SPI2_RX);
-    rxChannel_()->attachInterrupt(rxIsr_);
-    rxChannel_()->interruptAtCompletion();
-  }
-
-  static void pre_cs_impl()
-  {
-    SPI2_SR = 0xFF0F0000;
-    SPI2_RSER = SPI_RSER_RFDF_RE | SPI_RSER_RFDF_DIRS | SPI_RSER_TFFF_RE | SPI_RSER_TFFF_DIRS;
-  }
-
-  static void post_cs_impl()
-  {
-    rxChannel_()->enable();
-    txChannel_()->enable();
-  }
-
-  static void post_finishCurrentTransfer_impl()
-  {
-    SPI2_RSER = 0;
-    SPI2_SR = 0xFF0F0000;
-  }
-
-private:
-};
-*/
 
 extern DmaSpi1 DMASPI1;
 //extern DmaSpi2 DMASPI2;
@@ -918,6 +879,22 @@ private:
 
 extern DmaSpi1 DMASPI1;
 //extern DmaSpi2 DMASPI2;
+
+
+#if defined(DEBUG_DMASPI)
+void dumpDMA_TCD(DMABaseClass *dmabc)
+{
+	Serial.printf("%x %x:", (uint32_t)dmabc, (uint32_t)dmabc->TCD);
+
+	Serial.printf("SA:%x SO:%d AT:%x NB:%x SL:%d DA:%x DO: %d CI:%x DL:%x CS:%x BI:%x\n", (uint32_t)dmabc->TCD->SADDR,
+		dmabc->TCD->SOFF, dmabc->TCD->ATTR, dmabc->TCD->NBYTES, dmabc->TCD->SLAST, (uint32_t)dmabc->TCD->DADDR, 
+		dmabc->TCD->DOFF, dmabc->TCD->CITER, dmabc->TCD->DLASTSGA, dmabc->TCD->CSR, dmabc->TCD->BITER);
+}
+#else
+void dumpDMA_TCD(DMABaseClass *dmabc) {}
+#endif
+
+
 #else
 
 #error Unknown chip
