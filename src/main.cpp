@@ -3,7 +3,7 @@
 #include <DmaSpi.h>
 
 /** buffers to send from and to receive to **/
-#define DMASIZE 12800
+#define DMASIZE 25600
 uint16_t src[DMASIZE];
 
 volatile uint16_t loopIndex = 0;
@@ -57,27 +57,27 @@ void setup()
 
 void loop()
 {
-  digitalWriteFast(LED_BUILTIN, true);
+  //digitalWriteFast(LED_BUILTIN, true);
 
 
   /** Prepare source and destination **/
-  setSrc(loopIndex);
-  Serial.println("Buffers are prepared");Serial.flush();
+  setSrc(loopIndex++);
+  //Serial.println("Buffers are prepared");Serial.flush();
 
 
   DmaSpi::Transfer trx(nullptr, 0, nullptr);
 
-  Serial.println("Testing src -> dest, single transfer");
-  Serial.println("--------------------------------------------------");
+  //Serial.println("Testing src -> dest, single transfer");
+  //Serial.println("--------------------------------------------------");
   ActiveLowChipSelect cs(0, SPISettings(4000000, MSBFIRST, SPI_MODE0));
   trx = DmaSpi::Transfer(src, DMASIZE, nullptr, 0, &cs);
   DMASPI0.registerTransfer(trx);
   while(trx.busy())
   {
   }
-  Serial.print("Finished DMA transfer ");
-  Serial.println(++loopIndex);
-  Serial.println("==================================================\n\n");
+  //Serial.print("Finished DMA transfer ");
+  //Serial.println(loopIndex);
+  //Serial.println("==================================================\n\n");
 
 
   //DMASPI0.end();
@@ -86,7 +86,7 @@ void loop()
 
 
   //delay(50);
-  digitalWriteFast(LED_BUILTIN, false);
+  //digitalWriteFast(LED_BUILTIN, false);
   //delay(50);
 
   //waitForKeyPress();
